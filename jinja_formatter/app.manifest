@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "2.0.0",
+  "info": {
+    "title": "Jinja2 Formatter",
+    "id": {
+      "group": null,
+      "name": "jinja_formatter",
+      "version": "1.0.1"
+    },
+    "author": [],
+    "releaseDate": null,
+    "description": "A simple command to transform the output to a nicely formatted string",
+    "classification": {
+      "intendedAudience": null,
+      "categories": [],
+      "developmentStatus": null
+    },
+    "commonInformationModels": null,
+    "license": {
+      "name": null,
+      "text": null,
+      "uri": null
+    },
+    "privacyPolicy": {
+      "name": null,
+      "text": null,
+      "uri": null
+    },
+    "releaseNotes": {
+      "name": null,
+      "text": "./README.md",
+      "uri": null
+    }
+  },
+  "dependencies": {
+     "Jinja2": { 
+        "version": ">=3.1.2"
+     }
+   },
+  "tasks": null,
+  "inputGroups": null,
+  "incompatibleApps": null,
+  "platformRequirements": null,
+  "supportedDeployments": [
+    "_standalone",
+    "_distributed"
+  ],
+  "targetWorkloads": null
+}
