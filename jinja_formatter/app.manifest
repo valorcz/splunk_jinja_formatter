@@ -7,7 +7,12 @@
       "name": "jinja_formatter",
       "version": "1.0.1"
     },
-    "author": [],
+    "author": [
+        {
+           "email": "vaclav.lorenc@gmail.com",
+           "name": "Vaclav Lorenc"
+        }
+    ],
     "releaseDate": null,
     "description": "A simple command to transform the output to a nicely formatted string",
     "classification": {
