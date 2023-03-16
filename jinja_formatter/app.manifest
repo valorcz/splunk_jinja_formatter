@@ -33,7 +33,7 @@
     },
     "releaseNotes": {
       "name": null,
-      "text": "./README.txt",
+      "text": "./README.md",
       "uri": null
     }
   },

@@ -16,37 +16,55 @@ from splunklib.searchcommands import (
 class Jinja2FormatterCommand(StreamingCommand):
     """
     The jinja2format command returns events with a one new field 'formatted_template'. It has one
-    mandatory parameter, **template**, which needs to hold a valid jinja2 template.
+    optional parameter, **result**, which can specify where the template gets rendered to.
 
     Example:
 
     ```
-    | makeresults count=5 | eval celsius = random()%100 | eval name = "Joe" | jinja2format template="It's {{ celsius }} degrees, {{ name }}!"
+    | makeresults count=5 
+    | eval celsius = random()%100 
+    | eval name = "Joe" 
+    | jinja2format "It's {{ celsius }} degrees, {{ name }}!"
     ```
     """
 
-    template = Option(
-        doc="""
-        **Syntax:** **template=***<jinja2_template>*
-        **Description:** Jinja2 template to format the record.
-        """,
-        require=True
-    )
+    result = Option(
+        doc='''
+        **Syntax:** **result=***<fieldname>*
+        **Description:** Name of the field that will hold the rendered template''',
+        require=False, validate=validators.Fieldname())
 
     def __init__(self):
         super(Jinja2FormatterCommand, self).__init__()
 
     def stream(self, records):
-        # To connect with Splunk, use the instantiated service object which is created using the server-uri and
-        # other meta details and can be accessed as shown below
-        # Example:-
-        #    service = self.service
-        #    info = service.info //access the Splunk Server info
-        for record in records:
-            template = jinja2.Template(self.template)
-            formatted_record = template.render(record)
-            record["formatted_template"] = formatted_record
-            yield record
+        self.logger.debug('jinja2format started')
 
+        # Check the parameters
+        if not self.result:
+            self.result = "formatted_record"
+        template_name = None
+        if self.fieldnames:
+            template_name = self.fieldnames[0]
+        else:
+           raise ValueError("We need to get a parameter with template")
+       
+        # Process the given chunk of records
+        for record in records:
+            # For each record, check the template
+            if template_name not in record:
+               # We were either given a string or non-existent fieldname
+               template = template_name
+            else:
+               template = record[template_name]
+
+            # Initialize the template
+            # TODO: Check for parsing errors
+            template = jinja2.Template(template)
+            # Render the stuff
+            formatted_record = template.render(record)
+            # Set the result field
+            record[self.result] = formatted_record
+            yield record
 
 dispatch(Jinja2FormatterCommand, sys.argv, sys.stdin, sys.stdout, __name__)
