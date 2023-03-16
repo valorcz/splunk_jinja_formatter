@@ -1,5 +1,23 @@
 # Jinja2 Splunk Formatting Command
 
+## Motivation
+
+In many cases, people format a user-readable content within
+Splunk -- either because they need to send an e-mail, show
+a text in a dashboard, or push the results to JIRA or other
+ticketing tool.
+
+But when they format the actual readable message, they have
+to use a a very simple formatting techniques, making the 
+query look rather ugly and difficult to maintain.
+
+With a template, it's possible to specify the resulting
+text with placeholders, which will later on be properly
+populated by the query results. And that's exactly
+what `jinja2format` does.
+
+## Description
+
 The `jinja2format` command returns events with a one new field,
 `formatted_template`, unless you specify an `result` option.
 
