@@ -17,9 +17,20 @@ pip install splunk-appinspect
 splunk-appinspect inspect jinja_formatter
 ```
 
+In order to get ready for Splunk app certification, run the verbose mode:
+
+```bash
+splunk-appinspect inspect --mode=precert jinja_formatter
+```
+
 ## Package
 
 ```bash
 slim package jinja_formatter -o app
 ```
 
+## References
+
+### Internal
+
+* [Creating Splunk Applications](https://confluence.in.here.com/display/~lorenc/DRAFT%3A+Creating+Splunk+Applications)
