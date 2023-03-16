@@ -48,3 +48,7 @@ In this example, we override the output field:
 Please refer to the [official
 documentation](https://jinja.palletsprojects.com/en/latest/templates/) for more
 details.
+
+## Issue Reporting
+
+Github
