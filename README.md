@@ -1,4 +1,12 @@
-# Development Notes
+# Splunk Jinja2 Formatter
+
+If you seek the actual documentation for the Splunk custom command, please
+read [README.md](jinja_formatter/README.md) in `jinja_formatter` folder.
+
+This part contains some development notes and remarks, which will later on
+be put somewhere else.
+
+## Development Notes
 
 ## Virtual Environment
 
@@ -31,6 +39,4 @@ slim package jinja_formatter -o app
 
 ## References
 
-### Internal
-
-* [Creating Splunk Applications](https://confluence.in.here.com/display/~lorenc/DRAFT%3A+Creating+Splunk+Applications)
+* TBD
