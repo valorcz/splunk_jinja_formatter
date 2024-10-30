@@ -49,6 +49,64 @@ something else too, but I am not really sure what exactly.
   | jinja2format result=out template
 ```
 
+## Custom Filters and Jinja Functions
+
+Over time, we realized we need more functions to be able to efficiently
+implement our templates.
+
+In order to do so, we've added the following custom filters & functions.
+
+### Custom Filters
+
+- `toyaml(value: object)`
+- `fromjson(value: str)`
+- `tolist`
+- `strftime(unix_timestamp: str, format_string: str = "%Y-%m-%dT%H:%M:%S%z")`
+
+```text
+    | makeresults count=1 
+    | eval celsius = random()%100 
+    | eval mvtest=mvappend("value1", "value2")
+    | eval mv = mvappend("value1", "value2", "value3", "value4", "value5")
+    | eval ip=mvappend("ip1", "ip2", "ip3")
+    | eval domain=mvappend("domain1", "domain2", "domain3", "domain4")
+    | eval encoded="w5pwbG7EmyDFvmx1xaVvdcSNa8O9IGvFr8WI"
+    | eval mvtest="value1"
+    | eval name = "Joe" 
+    | eval tj = "{\"dict\": { \"key1\": \"1234-5678-90ab\", \"key2\": \"abcdef\"}}"
+
+    | eval template="
+    It's {{ celsius }} degrees, {{ name }}! It's year {{ _time | strftime('%Y') }} now. 
+
+    How about a YAML test? 
+    ```yaml
+    {{ tj | fromjson | toyaml }}
+    ```
+
+    How about a JSON test?
+    ```json
+    {{ tj | fromjson | tojson(2) }}
+    ```
+
+    Dealing with occasional multivalues: {{ mvtest | tolist }}
+
+    zip test: {{ zip(ip, domain, mv) | list }}
+    zip_longest test: {{ zip_longest(ip, domain, mv) | list }}
+
+    Test of the `zip_longest` in a loop:
+    {%- for (iip, idomain, imv) in zip_longest(ip, domain, mv, fillvalue='-') %}
+      - IP: {{ iip }}; domain: {{ idomain }}, mv: {{ imv }}
+    {%- endfor %}
+
+    Test of the YAML functions:
+    {{ zip(ip, domain, mv) | list | toyaml }}
+
+    Test b64decode:
+      - {{ encoded | b64decode }}
+    " 
+    | jinja2format result=out template
+```
+
 ## Template Language
 
 Please refer to the [official
