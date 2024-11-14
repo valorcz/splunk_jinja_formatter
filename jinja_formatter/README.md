@@ -8,7 +8,7 @@ a text in a dashboard, or push the results to JIRA or other
 ticketing tool.
 
 But when they format the actual readable message, they have
-to use a a very simple formatting techniques, making the 
+to use a very simple formatting techniques, making the 
 query look rather ugly and difficult to maintain.
 
 With a template, it's possible to specify the resulting
@@ -19,7 +19,7 @@ what `jinja2format` does.
 ## Description
 
 The `jinja2format` command returns events with a one new field,
-`formatted_template`, unless you specify an `result` option.
+`formatted_template`, unless you specify the `result` option.
 
 ## Example
 
@@ -33,7 +33,13 @@ The following example will output the rendered template into
   | jinja2format "It's {{ celsius }} degrees, {{ name }}!"
 ```
 
-In this example, we override the output field:
+In this example, we override the output field, and use
+a Splunk variable to hold the template.
+
+This is generally better if the template can be complex, and/or
+contains characters that could break passing the value to
+the `jinja2format` Splunk app -- mostly quotes, perhaps
+something else too, but I am not really sure what exactly.
 
 ```text
   | makeresults count=1
