@@ -8,7 +8,7 @@ a text in a dashboard, or push the results to JIRA or other
 ticketing tool.
 
 But when they format the actual readable message, they have
-to use a very simple formatting techniques, making the 
+to use a very simple formatting techniques, making the
 query look rather ugly and difficult to maintain.
 
 With a template, it's possible to specify the resulting
@@ -26,28 +26,28 @@ The `jinja2format` command returns events with a one new field,
 The following example will output the rendered template into
 `formatted_template` field:
 
-```text
+```bash
   | makeresults count=1 
   | eval celsius = random()%100 
   | eval name = "Joe" 
   | jinja2format "It's {{ celsius }} degrees, {{ name }}!"
 ```
 
-In this example, we override the output field, and use
-a Splunk variable to hold the template.
+In the following example, we override the output field, and use a Splunk
+variable to hold the template.
 
-This is generally better if the template can be complex, and/or
-contains characters that could break passing the value to
-the `jinja2format` Splunk app -- mostly quotes, perhaps
-something else too, but I am not really sure what exactly.
-
-```text
+```bash
   | makeresults count=1
   | eval celsius = random()%100 
   | eval name = "Joe" 
   | eval template="It's {{ celsius }} degrees, {{ name }}!"
   | jinja2format result=out template
 ```
+
+This is generally better if the template is complex, and/or
+contains characters that could break passing the value to
+the `jinja2format` Splunk app -- mostly quotes, perhaps
+something else too, but I am not really sure what exactly.
 
 ## Custom Filters and Jinja Functions
 
@@ -58,12 +58,74 @@ In order to do so, we've added the following custom filters & functions.
 
 ### Custom Filters
 
-- `toyaml(value: object)`
-- `fromjson(value: str)`
-- `tolist`
-- `strftime(unix_timestamp: str, format_string: str = "%Y-%m-%dT%H:%M:%S%z")`
+#### `toyaml(value: object)`
 
-```text
+Take the given object and try to render it as YAML structure, with
+some default pretty-printing.
+
+#### `fromjson(value: str)`
+
+Take a string and turn it into a JSON object. This can be useful in a combination
+with `tojson()` function, which nicely formats the given JSON object.
+
+```bash
+{ value | fromjson | tojson(2) }
+```
+
+will take the `value` and, if everything is well, it'll format it
+to a nice JSON representation.
+
+#### `tolist(value: object)`
+
+Convert the given value to a list. This is probably only useful for multi-value
+Splunk fields that may or may not be multivalued. By default, a multi-value field
+is passed as a list, but single-value field is a string. With 
+
+#### `strftime(unix_timestamp: str, format_string: str = "%Y-%m-%dT%H:%M:%S%z")`
+
+Convert the given `unix_timestamp` to a human-readable timestamp. By default,
+it uses ISO 8601 standard, but you can provide your own `format_string`.
+
+Useful for many Splunk searches, because timestamps are usually in the Epoch
+format, not in the human-readable one.
+
+#### `b64decode(value: str)`
+
+Take the given string and apply base64 decoding to it.
+
+#### `b64encode(value: str)`
+
+Take the given string and apply base64 encoding to it.
+
+### Custom Functions
+
+#### `zip(list1, list2, ...)`
+
+Allows you to aggregate elements from multiple iterables/list into a single
+list.  It takes two or more lists as input and returns an iterator that
+produces tuples containing elements from all the input iterables.
+
+In many cases, you may want to use `list()` filter as the follow-up filter in
+order to convert the output to a list.
+
+```bash
+zip test: {{ zip(ip, domain, mv) | list }}
+```
+
+#### `zip_longest(list1, list2, ..., fillvalue=None)`
+
+This function makes an iterator that aggregates elements from each of the
+iterables. The iteration continues until the longest iterable is not exhausted.
+
+It takes two or more lists as input and returns an iterator that
+produces tuples containing elements from all the input iterables.
+
+### Complex Example
+
+The following example shows probably all the functionality
+implemented in the current release of `jinja2format` command.
+
+```bash
     | makeresults count=1 
     | eval celsius = random()%100 
     | eval mvtest=mvappend("value1", "value2")
@@ -115,4 +177,5 @@ details.
 
 ## Issue Reporting
 
-Github
+Please use [splunk_jinja_formatter](https://github.com/valorcz/splunk_jinja_formatter) 
+repository on Github for reporting issues, suggesting features, etc.
