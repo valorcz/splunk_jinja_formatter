@@ -33,6 +33,10 @@ splunk-appinspect inspect --mode=precert jinja_formatter
 
 ## Package
 
+Btw, as of October 2024, `splunk-packaging-toolkit` only works under python3.9 version, not
+newer ones. Work with `pyenv` to get python3.9 to the system, otherwise `slim` won't work.
+Hopefully they'll update the package before python3.9 reaches its end-of-life (2025-10).
+
 ```bash
 slim package jinja_formatter -o app
 ```
