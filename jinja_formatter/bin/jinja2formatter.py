@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "lib"))
 
 import yaml
 import jinja2
+import jinja2.sandbox
 
 from splunklib.searchcommands import (
     dispatch,
@@ -115,7 +116,7 @@ class Jinja2FormatterCommand(StreamingCommand):
         #   per record.
 
         # Register our custom filters/functions
-        env = jinja2.Environment()
+        env = jinja2.sandbox.SandboxedEnvironment()
 
         # Register our custom filters
         env.filters.update(strftime=filter_strftime)
