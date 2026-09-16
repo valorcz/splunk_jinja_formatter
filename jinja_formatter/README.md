@@ -2,180 +2,229 @@
 
 ## Motivation
 
-In many cases, people format a user-readable content within
-Splunk -- either because they need to send an e-mail, show
-a text in a dashboard, or push the results to JIRA or other
-ticketing tool.
+In many cases, users need to format human-readable content within Splunk -- whether sending alert emails, rendering text in dashboards, or forwarding events to Jira, Slack, or ticketing webhooks.
 
-But when they format the actual readable message, they have
-to use a very simple formatting techniques, making the
-query look rather ugly and difficult to maintain.
+Without templating, users must rely on complex combinations of `strcat`, `replace`, and `eval` string concatenations, making search queries cluttered, fragile, and difficult to maintain.
 
-With a template, it's possible to specify the resulting
-text with placeholders, which will later on be properly
-populated by the query results. And that's exactly
-what `jinja2format` does.
+With Jinja2 templating, you can write clean, reusable templates with placeholders, loops, filters, and conditionals that are populated dynamically by query results. That is what `jinja2format` provides.
 
-## Description
+---
 
-The `jinja2format` command returns events with a one new field,
-`formatted_template`, unless you specify the `result` option.
+## Syntax & Options
 
-## Example
-
-The following example will output the rendered template into
-`formatted_template` field:
-
-```bash
-  | makeresults count=1 
-  | eval celsius = random()%100 
-  | eval name = "Joe" 
-  | jinja2format "It's {{ celsius }} degrees, {{ name }}!"
+```spl
+jinja2format [result=<field-name>] [on_error=<message|fail|null>] <template-string|template-field>
 ```
 
-In the following example, we override the output field, and use a Splunk
-variable to hold the template.
+| Option | Type | Default | Description |
+|:---|:---|:---|:---|
+| `result` | string | `formatted_template` | Name of the output field that will hold the rendered template. |
+| `on_error` | string | `message` | Error handling behavior on template syntax or render errors: `message` (outputs error string), `fail` (aborts search execution), or `null` (sets result field to null). |
+| `<template>` | string | *required* | Either a literal template string (e.g. `"Hello {{ name }}"`) or the name of a field containing the template. |
 
-```bash
-  | makeresults count=1
-  | eval celsius = random()%100 
-  | eval name = "Joe" 
-  | eval template="It's {{ celsius }} degrees, {{ name }}!"
-  | jinja2format result=out template
+---
+
+## Examples
+
+### Basic Usage with a Literal Template
+
+The following example outputs the rendered text into the default `formatted_template` field:
+
+```spl
+| makeresults count=1 
+| eval celsius = random()%100 
+| eval name = "Joe" 
+| jinja2format "It's {{ celsius }} degrees, {{ name }}!"
 ```
 
-This is generally better if the template is complex, and/or
-contains characters that could break passing the value to
-the `jinja2format` Splunk app -- mostly quotes, perhaps
-something else too, but I am not really sure what exactly.
+### Custom Result Field and Field-Based Template
+
+You can store the template in a field and customize the output field name using `result`:
+
+```spl
+| makeresults count=1
+| eval celsius = random()%100 
+| eval name = "Joe" 
+| eval template = "It's {{ celsius }} degrees, {{ name }}!"
+| jinja2format result=out template
+```
+
+### Error Handling
+
+Control what happens if a template contains a syntax or rendering error:
+
+```spl
+| makeresults count=1
+| eval broken_template = "{{ 10 / 0 }}"
+| jinja2format on_error=null broken_template
+```
+
+---
+
+## Handling Quotes in Splunk Templates
+
+In Splunk SPL, double-quotes (`"`) are used for string literals in `eval`. When creating templates that contain quotes, consider these best practices:
+
+1. **Store multiline templates in an `eval` field**:
+   Defining your template in a dedicated `| eval template="..."` keeps your query organized and separates template definition from the `jinja2format` command.
+2. **Use single quotes inside Jinja expressions**:
+   Inside Jinja tags (`{{ ... }}` and `{% ... %}`), Jinja accepts single-quotes (`'...'`) for string literals. Because Splunk does not require escaping single quotes within double-quoted SPL strings, this requires zero backslashes:
+   ```spl
+   | eval template = "{{ _time | strftime('%Y-%m-%d') }} - {{ 'Hello ' ~ name }}"
+   | jinja2format template
+   ```
+3. **Use `tojson` and `toyaml` instead of manual quoting**:
+   When generating JSON or YAML, avoid manually escaping quotes like `"{\"key\": \"val\"}"`. Instead, construct a Python dictionary using single quotes in Jinja and pipe it to `tojson`:
+   ```spl
+   | jinja2format "{{ {'user': name, 'status': status, 'active': true} | tojson }}"
+   ```
+
+---
 
 ## Custom Filters and Jinja Functions
 
-Over time, we realized we need more functions to be able to efficiently
-implement our templates.
-
-In order to do so, we've added the following custom filters & functions.
+To simplify template creation in Splunk, `jinja2format` provides several built-in custom filters and global functions.
 
 ### Custom Filters
 
-#### `toyaml(value: object)`
+#### `strftime(unix_timestamp: int|str, format_string: str = "%Y-%m-%dT%H:%M:%S%z")`
 
-Take the given object and try to render it as YAML structure, with
-some default pretty-printing.
+Converts a Unix epoch timestamp to a formatted date/time string. Defaults to ISO 8601 UTC format.
+
+```jinja
+{{ _time | strftime('%Y-%m-%d %H:%M:%S') }}
+```
 
 #### `fromjson(value: str)`
 
-Take a string and turn it into a JSON object. This can be useful in a combination
-with `tojson()` function, which nicely formats the given JSON object.
+Parses a JSON-encoded string into a Python dictionary or list structure. Frequently combined with Jinja's built-in `tojson`:
 
-```bash
-{ value | fromjson | tojson(2) }
+```jinja
+{{ raw_json_field | fromjson | tojson(2) }}
 ```
 
-will take the `value` and, if everything is well, it'll format it
-to a nice JSON representation.
+#### `toyaml(value: object)`
+
+Safely serializes an object or dictionary to a clean, human-readable YAML string.
+
+```jinja
+{{ raw_json_field | fromjson | toyaml }}
+```
 
 #### `tolist(value: object)`
 
-Convert the given value to a list. This is probably only useful for multi-value
-Splunk fields that may or may not be multivalued. By default, a multi-value field
-is passed as a list, but single-value field is a string. With 
+Converts the given value to a list. This is especially useful for Splunk fields that may or may not be multivalued: Splunk passes single values as a string and multiple values as a list. With `tolist`, you can safely iterate over the field in Jinja loops regardless of whether it has one or many values:
 
-#### `strftime(unix_timestamp: str, format_string: str = "%Y-%m-%dT%H:%M:%S%z")`
-
-Convert the given `unix_timestamp` to a human-readable timestamp. By default,
-it uses ISO 8601 standard, but you can provide your own `format_string`.
-
-Useful for many Splunk searches, because timestamps are usually in the Epoch
-format, not in the human-readable one.
-
-#### `b64decode(value: str)`
-
-Take the given string and apply base64 decoding to it.
+```jinja
+{% for ami in aws_ami_id | tolist %}
+  - AMI: {{ ami }}
+{% endfor %}
+```
 
 #### `b64encode(value: str)`
 
-Take the given string and apply base64 encoding to it.
+Base64 encodes a string value to UTF-8.
+
+#### `b64decode(value: str)`
+
+Base64 decodes a string value to UTF-8.
+
+#### `avg(value: list)`
+
+Calculates the numeric average of a list or iterable (e.g. `{{ response_times | avg }}`).
+
+---
 
 ### Custom Functions
 
 #### `zip(list1, list2, ...)`
 
-Allows you to aggregate elements from multiple iterables/list into a single
-list.  It takes two or more lists as input and returns an iterator that
-produces tuples containing elements from all the input iterables.
+Aggregates elements from multiple iterables into tuples until the shortest iterable is exhausted:
 
-In many cases, you may want to use `list()` filter as the follow-up filter in
-order to convert the output to a list.
-
-```bash
-zip test: {{ zip(ip, domain, mv) | list }}
+```jinja
+{{ zip(ip, domain, mv) | list }}
 ```
 
 #### `zip_longest(list1, list2, ..., fillvalue=None)`
 
-This function makes an iterator that aggregates elements from each of the
-iterables. The iteration continues until the longest iterable is not exhausted.
+Aggregates elements from multiple iterables until the longest iterable is exhausted, filling missing values with `fillvalue`:
 
-It takes two or more lists as input and returns an iterator that
-produces tuples containing elements from all the input iterables.
-
-### Complex Example
-
-The following example shows probably all the functionality
-implemented in the current release of `jinja2format` command.
-
-```bash
-    | makeresults count=1 
-    | eval celsius = random()%100 
-    | eval mvtest=mvappend("value1", "value2")
-    | eval mv = mvappend("value1", "value2", "value3", "value4", "value5")
-    | eval ip=mvappend("ip1", "ip2", "ip3")
-    | eval domain=mvappend("domain1", "domain2", "domain3", "domain4")
-    | eval encoded="w5pwbG7EmyDFvmx1xaVvdcSNa8O9IGvFr8WI"
-    | eval mvtest="value1"
-    | eval name = "Joe" 
-    | eval tj = "{\"dict\": { \"key1\": \"1234-5678-90ab\", \"key2\": \"abcdef\"}}"
-
-    | eval template="
-    It's {{ celsius }} degrees, {{ name }}! It's year {{ _time | strftime('%Y') }} now. 
-
-    How about a YAML test? 
-    ```yaml
-    {{ tj | fromjson | toyaml }}
-    ```
-
-    How about a JSON test?
-    ```json
-    {{ tj | fromjson | tojson(2) }}
-    ```
-
-    Dealing with occasional multivalues: {{ mvtest | tolist }}
-
-    zip test: {{ zip(ip, domain, mv) | list }}
-    zip_longest test: {{ zip_longest(ip, domain, mv) | list }}
-
-    Test of the `zip_longest` in a loop:
-    {%- for (iip, idomain, imv) in zip_longest(ip, domain, mv, fillvalue='-') %}
-      - IP: {{ iip }}; domain: {{ idomain }}, mv: {{ imv }}
-    {%- endfor %}
-
-    Test of the YAML functions:
-    {{ zip(ip, domain, mv) | list | toyaml }}
-
-    Test b64decode:
-      - {{ encoded | b64decode }}
-    " 
-    | jinja2format result=out template
+```jinja
+{% for (iip, idomain) in zip_longest(ip, domain, fillvalue='-') %}
+  - IP: {{ iip }}, Domain: {{ idomain }}
+{% endfor %}
 ```
+
+#### `enumerate(iterable, start=0)`
+
+Returns an iterator yielding pairs of `(index, item)` starting from `start` (default 0):
+
+```jinja
+{% for idx, host in enumerate(servers, start=1) %}
+  {{ idx }}. {{ host }}
+{% endfor %}
+```
+
+---
+
+## Complex Example
+
+The following search illustrates the features and custom filters available in `jinja2format`:
+
+```spl
+| makeresults count=1 
+| eval celsius = random()%100 
+| eval mvtest = mvappend("value1", "value2")
+| eval mv = mvappend("value1", "value2", "value3", "value4", "value5")
+| eval ip = mvappend("ip1", "ip2", "ip3")
+| eval domain = mvappend("domain1", "domain2", "domain3", "domain4")
+| eval encoded = "w5pwbG7EmyDFvmx1xaVvdcSNa8O9IGvFr8WI"
+| eval name = "Joe" 
+| eval tj = "{\"dict\": { \"key1\": \"1234-5678-90ab\", \"key2\": \"abcdef\"}}"
+
+| eval template="
+It's {{ celsius }} degrees, {{ name }}! Year: {{ _time | strftime('%Y') }}
+
+YAML formatting:
+```yaml
+{{ tj | fromjson | toyaml }}
+```
+
+JSON formatting:
+```json
+{{ tj | fromjson | tojson(2) }}
+```
+
+Dealing with occasional multivalues: {{ mvtest | tolist }}
+
+zip test: {{ zip(ip, domain, mv) | list }}
+zip_longest test: {{ zip_longest(ip, domain, mv) | list }}
+
+Loop with zip_longest:
+{%- for (iip, idomain, imv) in zip_longest(ip, domain, mv, fillvalue='-') %}
+  - IP: {{ iip }}; domain: {{ idomain }}, mv: {{ imv }}
+{%- endfor %}
+
+Enumerate loop:
+{%- for idx, val in enumerate(ip, start=1) %}
+  {{ idx }}. {{ val }}
+{%- endfor %}
+
+Base64 decode:
+  - {{ encoded | b64decode }}
+
+Average calculation:
+  - {{ [celsius, 50, 75] | avg }}
+"
+| jinja2format result=out on_error=message template
+```
+
+---
 
 ## Template Language
 
-Please refer to the [official
-documentation](https://jinja.palletsprojects.com/en/latest/templates/) for more
-details.
+For standard Jinja syntax (control structures, conditions, macros, and built-in filters), refer to the [official Jinja documentation](https://jinja.palletsprojects.com/en/latest/templates/).
 
 ## Issue Reporting
 
-Please use [splunk_jinja_formatter](https://github.com/valorcz/splunk_jinja_formatter) 
-repository on Github for reporting issues, suggesting features, etc.
+Please use the [splunk_jinja_formatter](https://github.com/valorcz/splunk_jinja_formatter) GitHub repository for reporting issues or suggesting features.

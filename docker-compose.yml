@@ -1,0 +1,20 @@
+services:
+  splunk:
+    image: "splunk/splunk:latest"
+    container_name: splunk-jinja2-formatter
+    environment:
+      - SPLUNK_START_ARGS=--accept-license
+      - SPLUNK_GENERAL_TERMS=--accept-sgt-current-at-splunk-com
+      - SPLUNK_PASSWORD=changed!
+      - SPLUNK_HEC_TOKEN=11111111-1111-1111-1111-1111111111113
+    ports:
+      - "8000:8000"
+      - "8088:8088"
+      - "8089:8089"
+
+    healthcheck:
+      test: ["CMD", "/sbin/checkstate.sh"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 30s

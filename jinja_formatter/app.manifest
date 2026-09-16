@@ -5,13 +5,13 @@
     "id": {
       "group": null,
       "name": "jinja_formatter",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
     "author": [
-        {
-           "email": "vaclav.lorenc@gmail.com",
-           "name": "Vaclav Lorenc"
-        }
+      {
+        "email": "vaclav.lorenc@gmail.com",
+        "name": "Vaclav Lorenc"
+      }
     ],
     "releaseDate": null,
     "description": "A simple command to transform the output to a nicely formatted string",
@@ -38,15 +38,15 @@
     }
   },
   "dependencies": {
-     "Jinja2": { 
-        "version": ">=3.1.6"
-     },
-     "splunk-sdk": {
-        "version": ">=2.1.0"
-     },
-     "PyYAML": {
-        "version": ">=6.0.2"
-     }
+    "Jinja2": {
+      "version": ">=3.1.6"
+    },
+    "splunk-sdk": {
+      "version": ">=2.1.0"
+    },
+    "PyYAML": {
+      "version": ">=6.0.2"
+    }
   },
   "tasks": null,
   "inputGroups": null,

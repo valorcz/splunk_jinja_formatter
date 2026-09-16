@@ -1,7 +1,6 @@
-
 # Application-level permissions
+# Export all objects in the app globally so jinja2format and searchbnf are available across all apps
 
 []
 access = read : [ * ], write : [ sc_admin, admin, power ]
 export = system
-
