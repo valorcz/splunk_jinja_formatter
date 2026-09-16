@@ -1,4 +1,19 @@
 *.pyc
+*.pyo
+__pycache__/
 .DS_Store
-.venv
-.vagrant
+.venv/
+.vagrant/
+.pytest_cache/
+.python-version
+*.log
+
+# Build and packaging artifacts
+dist/
+app/*.tar.gz
+appinspect.output
+inspect.yml
+
+# Vendored libraries (generated on-demand via `make vendor` or `make package`)
+jinja_formatter/lib/
+lib/
