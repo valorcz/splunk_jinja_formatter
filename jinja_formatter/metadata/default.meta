@@ -4,3 +4,11 @@
 []
 access = read : [ * ], write : [ sc_admin, admin, power ]
 export = system
+
+[collections/jinja_templates]
+access = read : [ * ], write : [ sc_admin, admin, power ]
+export = system
+
+[transforms/jinja_templates_lookup]
+access = read : [ * ], write : [ sc_admin, admin, power ]
+export = system
