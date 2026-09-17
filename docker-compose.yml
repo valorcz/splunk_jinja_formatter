@@ -1,7 +1,9 @@
 services:
   splunk:
-    image: "splunk/splunk:latest"
+    image: "splunk/splunk:10.4"
     container_name: splunk-jinja2-formatter
+    entrypoint: ["/bin/bash", "-c", "if [ -f /opt/splunk/bin/mongod-7.0 ]; then sudo ln -sf /opt/splunk/bin/mongod-7.0 /opt/splunk/bin/mongod-8.0; fi; exec /sbin/entrypoint.sh \"$@\"", "--"]
+    command: ["start-service"]
     environment:
       - SPLUNK_START_ARGS=--accept-license
       - SPLUNK_GENERAL_TERMS=--accept-sgt-current-at-splunk-com

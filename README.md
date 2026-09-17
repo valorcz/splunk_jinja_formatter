@@ -1,8 +1,9 @@
 # Splunk Jinja2 Formatter
 
-A Splunk app providing the `jinja2format` custom streaming search command to format events using Jinja2 templates.
+A Splunk app providing the `jinja2format` custom streaming search command to format events using Jinja2 templates -- supporting inline strings, event-field templates, and **Splunk KV Store-backed templates with multi-tenant inheritance** (`{% extends %}`, `{% block %}`, `{% include %}`).
 
-If you seek user documentation for the Splunk command, options, and filters, see [jinja_formatter/README.md](jinja_formatter/README.md).
+- **Command User Guide & Examples**: See [jinja_formatter/README.md](jinja_formatter/README.md).
+- **Template Inheritance & KV Store Deep Dive**: See [docs/template_inheritance.md](docs/template_inheritance.md).
 
 ---
 
@@ -11,7 +12,8 @@ If you seek user documentation for the Splunk command, options, and filters, see
 The command is implemented as a Splunk Custom Search Command V2 (`StreamingCommand`) located at [`jinja_formatter/bin/jinja2formatter.py`](jinja_formatter/bin/jinja2formatter.py):
 
 - **Sandboxed Execution**: Templates are executed within a `jinja2.sandbox.SandboxedEnvironment`, preventing unauthorized Python introspection, class hierarchy traversal (`__class__`, `__subclasses__`), or arbitrary code execution.
-- **Template AST Caching**: Template strings are compiled and cached via `@functools.lru_cache(maxsize=512)`. When streaming thousands of search events with a static or recurring template, the compiled template AST is reused instantly without re-parsing overhead.
+- **KV Store Loader & Multi-Tenancy**: The `SplunkKVStoreLoader` resolves templates from the `jinja_templates` KV Store collection using scoped lookup hierarchy (`<calling_app>` -> `global` fallback) or explicit cross-app referencing (`<target_app>:<template_name>`).
+- **Template AST & Source Caching**: Template sources fetched from the KV Store are cached in memory per search, and compiled Jinja ASTs are cached via `@functools.lru_cache(maxsize=512)`. When streaming thousands of search events, parsing overhead is eliminated.
 - **Custom Filters & Globals**:
   - Filters: `strftime`, `fromjson`, `tolist`, `toyaml`, `b64encode`, `b64decode`, `avg`.
   - Globals: `zip`, `zip_longest`, `enumerate`.

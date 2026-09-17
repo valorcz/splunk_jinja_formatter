@@ -1,6 +1,6 @@
 [project]
 name = "splunk-jinja-formatter"
-version = "1.0.6"
+version = "1.1.0"
 description = "A Splunk custom search command to format events using Jinja2 templates"
 readme = "README.md"
 requires-python = ">=3.9"
